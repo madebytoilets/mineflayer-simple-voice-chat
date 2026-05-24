@@ -1,6 +1,5 @@
 import * as dgram  from 'dgram';
 import { Bot } from 'mineflayer';
-import PacketManager from './PacketManager';
 
 //types
 import { secret_packet } from './data/types';
@@ -22,26 +21,78 @@ export default class VoiceServer {
 
 	connected = false;
 
+	authRetryTimer: ReturnType<typeof setInterval> | null = null
+
 	init(bot: Bot, data: secret_packet) {
-		this.udpSocket.on("error", (err) => { throw new Error(`Failed to connect  to UDP server: ${err}`); })
+		this.udpSocket.on("error", (err) => {
+			bot.emit("error", new Error(`VoiceChat UDP error: ${err.message}`))
+		})
 		this.udpSocket.on("close", () => { console.log("UDP Connection closed")})
 		this.udpSocket.on("message", this.handler.bind(this));
 
 		this.bot = bot
 		this.playerUUID = data.playerUUID
-		this.host = data.voiceHost.length > 0 ? new URL("voicechat://" + data.voiceHost).host : bot._client.socket.remoteAddress
-		this.port = data.voiceHost.length > 0 ? parseInt(new URL(this.host).port) : data.serverPort
+		
+		const parsed = this.parseAddress(data.voiceHost, bot._client.socket.remoteAddress, data.serverPort)
+		this.host = parsed.host
+		this.port = parsed.port
 		
 		this.secret = data.secret
 		SVC_OBJ.PacketManager.secret = this.secret
 
-		this.send(SVC_OBJ.PacketManager.createPacket("packet", {
+		const authPacket = SVC_OBJ.PacketManager.createPacket("packet", {
 			"id": "AuthenticatePacket",
 			"data": {
 				"playerUUID": this.playerUUID,
 				"secret": this.secret
 			}
-		}))
+		})
+
+		const sendAuth = () => this.send(authPacket)
+		sendAuth()
+		this.authRetryTimer = setInterval(sendAuth, 1000)
+	}
+
+	cancelAuthRetry() {
+		if (this.authRetryTimer) {
+			clearInterval(this.authRetryTimer)
+			this.authRetryTimer = null
+		}
+	}
+
+	close() {
+		this.cancelAuthRetry()
+		try {
+			this.udpSocket.close()
+		} catch (e) {}
+	}
+
+	private parseAddress(voiceHost: string, serverIP: string, serverPort: number): { host: string; port: number } {
+		let host = serverIP
+		let port = serverPort
+		if (!voiceHost || voiceHost.length === 0) {
+			return { host, port }
+		}
+		const onlyDigits = /^\d+$/
+		if (onlyDigits.test(voiceHost)) {
+			const parsedPort = parseInt(voiceHost, 10)
+			if (parsedPort > 0 && parsedPort <= 65535) {
+				port = parsedPort
+			}
+			return { host, port }
+		}
+		try {
+			const uri = new URL("voicechat://" + voiceHost)
+			if (uri.hostname) {
+				host = uri.hostname
+			}
+			if (uri.port) {
+				port = parseInt(uri.port, 10)
+			}
+		} catch (e) {
+			this.bot.emit("error", new Error(`Failed to parse voice host: ${voiceHost}`))
+		}
+		return { host, port }
 	}
 
 	private async handler(msg: Buffer, _: dgram.RemoteInfo) {

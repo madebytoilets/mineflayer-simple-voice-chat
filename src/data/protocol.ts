@@ -80,7 +80,7 @@ export default {
 				{"name": "type", "type": [
 					"mapper",
 					{
-						"type": "i8",
+						"type": "i16",
 						"mappings": {
 							"0": "normal",
 							"1": "open",
@@ -130,7 +130,7 @@ export default {
 					{"name": "type", "type": [
 						"mapper",
 						{
-							"type": "i8",
+							"type": "i16",
 							"mappings": {
 								"0": "normal",
 								"1": "open",
@@ -402,7 +402,14 @@ export default {
 			"PingPacket": [
 				"container",
 				[
-
+					{
+						"name": "id",
+						"type": "uuid"
+					},
+					{
+						"name": "timestamp",
+						"type": "u64"
+					}
 				]
 			],
 			"KeepAlivePacket": [
@@ -435,14 +442,14 @@ export default {
 						"type": "f32"
 					},
 					{
-						"name": "data",
+						"name": "flags",
 						"type": 
 						[
 							"bitfield",
 							[
-								{"name": "empty_fields", "size": 6, "signed": false},
+								{"name": "whisper", "size": 1, "signed": false},
 								{"name": "hasCategory", "size": 1, "signed": false},
-								{"name": "whisper", "size": 1, "signed": false}
+								{"name": "empty_fields", "size": 6, "signed": false}
 							]
 						]
 					},
@@ -452,7 +459,7 @@ export default {
 						[
 							"switch",
 							{
-								"compareTo": "data/hasCategory",
+								"compareTo": "flags/hasCategory",
 								"fields": {
 									"1": "string"
 								},
@@ -482,14 +489,13 @@ export default {
 						"type": "u64"
 					},
 					{
-						"name": "data",
+						"name": "flags",
 						"type": 
 						[
 							"bitfield",
 							[
-								{"name": "empty_fields", "size": 6, "signed": false},
 								{"name": "hasCategory", "size": 1, "signed": false},
-								{"name": "whisper", "size": 1, "signed": false}
+								{"name": "empty_fields", "size": 7, "signed": false}
 							]
 						]
 					},
@@ -499,7 +505,7 @@ export default {
 						[
 							"switch",
 							{
-								"compareTo": "data/hasCategory",
+								"compareTo": "flags/hasCategory",
 								"fields": {
 									"1": "string"
 								},
@@ -553,14 +559,13 @@ export default {
 						"type": "f32"
 					},
 					{
-						"name": "data",
+						"name": "flags",
 						"type": 
 						[
 							"bitfield",
 							[
-								{"name": "empty_fields", "size": 6, "signed": false},
 								{"name": "hasCategory", "size": 1, "signed": false},
-								{"name": "whisper", "size": 1, "signed": false}
+								{"name": "empty_fields", "size": 7, "signed": false}
 							]
 						]
 					},
@@ -570,7 +575,7 @@ export default {
 						[
 							"switch",
 							{
-								"compareTo": "data/hasCategory",
+								"compareTo": "flags/hasCategory",
 								"fields": {
 									"1": "string"
 								},

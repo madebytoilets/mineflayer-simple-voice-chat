@@ -27,6 +27,11 @@ export interface remove_group_packet {
 	uuid: Buffer
 }
 
+export interface joined_group_packet {
+	uuid: Buffer | undefined;
+	wrong_password: boolean;
+}
+
 export interface player_state {
 	disabled: boolean;
 	disconnected: boolean;
@@ -40,6 +45,7 @@ export interface Group {
 	name: String;
 	hasPassword: boolean;
 	persistent: boolean;
+	hidden: boolean;
 	type: string;
 }
 
@@ -49,7 +55,7 @@ export interface Sound {
 	sequencenumber: bigint;
 	category: string | undefined;
 
-	whispering: string | undefined
+	whispering: boolean | undefined
 	distance: number | undefined
 	location: {x:number, y:number, z:number} | undefined
 }

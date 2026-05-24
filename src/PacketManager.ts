@@ -16,9 +16,9 @@ export default class PacketManager {
 	async init(bot: Bot) {
 		this.bot = bot;
 
-		this.protoDef.addProtocol(protocol, ["channels"])
-		this.protoDef.addProtocol(protocol, ["udp"])
-		this.protoDef.addTypes(protocol.types)
+		this.protoDef.addProtocol(protocol as any, ["channels"])
+		this.protoDef.addProtocol(protocol as any, ["udp"])
+		this.protoDef.addTypes(protocol.types as any)
 
 		this.bot.on("login", async () => {
 			this.registerChannels(this.bot._client)
@@ -31,16 +31,17 @@ export default class PacketManager {
 	}
 
 	private async registerChannels(client: Client) {
-		client.registerChannel("voicechat:secret", this.protoDef.types.secret, true);
-		client.registerChannel("voicechat:player_state", this.protoDef.types.player_state, true);
-		client.registerChannel("voicechat:player_states", this.protoDef.types.player_states, true);
-		client.registerChannel("voicechat:add_group", this.protoDef.types.add_group, true);
-		client.registerChannel("voicechat:remove_group", this.protoDef.types.remove_group, true);
+		const types = (this.protoDef as any).types
+		client.registerChannel("voicechat:secret", types.secret, true);
+		client.registerChannel("voicechat:player_state", types.player_state, true);
+		client.registerChannel("voicechat:player_states", types.player_states, true);
+		client.registerChannel("voicechat:add_group", types.add_group, true);
+		client.registerChannel("voicechat:remove_group", types.remove_group, true);
+		client.registerChannel("voicechat:joined_group", types.joined_group, true);
 	}
 
-	// Is there a better way to do this?
 	private async registerTypes(client: Client) {
-        for (const [key, value] of Object.entries(this.protoDef.types)) {
+        for (const [key, value] of Object.entries((this.protoDef as any).types)) {
             client.registerChannel(key, value);
         }
     }
@@ -54,19 +55,20 @@ export default class PacketManager {
 	}
 
 	public encrypt(data: Buffer): Buffer {
-		const iv = crypto.randomBytes(16);
-			
-		const cipher = crypto.createCipheriv('aes-128-cbc', this.secret, iv);
+		const iv = crypto.randomBytes(12);
+		const cipher = crypto.createCipheriv('aes-128-gcm', this.secret, iv);
 		const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
-	
-		return Buffer.concat([iv, encrypted]);
-	  }
-	
+		const tag = cipher.getAuthTag();
+		return Buffer.concat([iv, encrypted, tag]);
+	}
+
 	public decrypt(payloadArray: Array<number>): Buffer {
 		const payload = Buffer.from(payloadArray)
-		const iv = payload.subarray(0, 16);
-		const encryptedData = payload.subarray(16, payload.length);
-		const decipher = crypto.createDecipheriv('aes-128-cbc', this.secret, iv);
+		const iv = payload.subarray(0, 12);
+		const tag = payload.subarray(payload.length - 16);
+		const encryptedData = payload.subarray(12, payload.length - 16);
+		const decipher = crypto.createDecipheriv('aes-128-gcm', this.secret, iv);
+		decipher.setAuthTag(tag);
 		const decryptedData = Buffer.concat([decipher.update(encryptedData), decipher.final()]);
 		return decryptedData;
 	}

@@ -1,4 +1,3 @@
 node_modules/
-mineflayer-simple-voice-chat/
-audio/
-pcm/
+package-lock.json
+.vscode

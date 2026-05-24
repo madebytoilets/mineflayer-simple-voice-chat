@@ -1,8 +1,17 @@
 {
-	"compilerOptions": {
-	  "target": "es6",
-	  "module": "commonjs",
-	  "outDir": "mineflayer-simple-voice-chat",
-	  "rootDir": "src"
-	}
-  }
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "outDir": "lib",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*"
+  ]
+}
